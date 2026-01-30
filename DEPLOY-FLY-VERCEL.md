@@ -234,8 +234,30 @@ fly status          # App status
 
 # Troubleshooting
 
-- **CORS errors:** Ensure `CORS_ORIGINS` on Fly includes your exact Vercel URL (`https://...`, no trailing slash). Redeploy after changing secrets.
-- **Backend 502 / not starting:** Run `fly logs` and fix any startup errors. Ensure the app listens on `PORT` (the Dockerfile uses `${PORT:-8080}`).
-- **Frontend “Cannot connect to server”:** Check `VITE_API_BASE` on Vercel is the Fly.io backend URL and redeploy the frontend after changing env.
+## Why is it still not running? (Sign-in / Register fails on Vercel)
+
+1. **Redeploy the Vercel frontend**  
+   The frontend must use the latest code that points to the Fly backend. In Vercel → **Deployments** → **⋯** on the latest deployment → **Redeploy**. Wait for the build to finish, then try again.
+
+2. **Fly backend is sleeping (free tier)**  
+   On the free tier, Fly stops your app when it’s idle. The **first request** after that can take **30–60 seconds** and may time out.  
+   - Open **https://dms-backend.fly.dev/** in a new browser tab and wait until you see `{"message":"Document Management System API"}` (may take up to a minute).  
+   - Then go back to **https://pcg-dms.vercel.app** and try **Sign in** or **Register** again.
+
+3. **Check Fly app status**  
+   From your machine, in the **backend** folder run:  
+   `fly status`  
+   and:  
+   `fly logs`  
+   If the app is stopped or crashing, fix any errors shown in the logs and redeploy with `fly deploy`.
+
+4. **Optional: set VITE_API_BASE on Vercel**  
+   In Vercel → **Settings** → **Environment Variables**, add **`VITE_API_BASE`** = **`https://dms-backend.fly.dev`** (no trailing slash), then **Redeploy** so the build uses it.
+
+---
+
+- **CORS errors:** Ensure `CORS_ORIGINS` on Fly includes your exact Vercel URL (`https://pcg-dms.vercel.app`, no trailing slash). Redeploy after changing secrets.
+- **Backend 502 / not starting:** Run `fly logs` and fix any startup errors. Ensure the app listens on port 8080 (see Dockerfile).
+- **Frontend “Cannot connect to server”:** Redeploy Vercel so the latest frontend (with Fly URL fallback) is live. Then wake the backend by opening https://dms-backend.fly.dev/ and retry.
 - **SQLite not persisting:** Add a Fly volume and set `DATABASE_URL` and `UPLOAD_DIR` to paths under the volume (see Step 3b).
 - **Need PostgreSQL:** Use `fly postgres create` and then `fly secrets set DATABASE_URL="postgres://..."` with the provided URL.

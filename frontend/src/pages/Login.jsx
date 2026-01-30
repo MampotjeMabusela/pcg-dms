@@ -46,7 +46,7 @@ export default function Login() {
         else if (err.response.status === 422) errorMessage = "Invalid email or password format";
         else errorMessage = err.response.data?.detail || `Login failed: ${err.response.statusText}`;
       } else if (err.request) {
-        errorMessage = "Cannot connect to server. Check that the API is reachable (local: http://localhost:8000, production: backend URL).";
+        errorMessage = "Cannot connect to the API. On the live site: the backend may be waking up (wait 30–60 sec and try again, or open https://dms-backend.fly.dev in a new tab first). Locally: ensure the backend is running on http://localhost:8000.";
       } else errorMessage = err.message || "Login failed";
       setError(errorMessage);
     } finally {

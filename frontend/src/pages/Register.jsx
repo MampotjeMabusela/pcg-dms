@@ -59,7 +59,7 @@ export default function Register() {
           errorMessage = err.response.data?.detail || `Registration failed: ${err.response.statusText}`;
         }
       } else if (err.request) {
-        errorMessage = "Cannot connect to server. Make sure the backend is running on http://localhost:8000";
+        errorMessage = "Cannot connect to the API. On the live site: wait 30–60 sec and try again, or open https://dms-backend.fly.dev in a new tab to wake the backend. Locally: run the backend on http://localhost:8000.";
       } else {
         errorMessage = err.message || "Registration failed";
       }
