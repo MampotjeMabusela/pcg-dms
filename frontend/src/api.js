@@ -1,7 +1,16 @@
 import axios from "axios";
 
-// Vercel: set VITE_API_BASE=https://dms-backend.fly.dev in project env vars
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const DEFAULT_API = "http://localhost:8000";
+const PRODUCTION_API = "https://dms-backend.fly.dev";
+// Use env var if set (Vercel: VITE_API_BASE=https://dms-backend.fly.dev); otherwise runtime fallback for production
+let API_BASE = import.meta.env.VITE_API_BASE || DEFAULT_API;
+if (
+  typeof window !== "undefined" &&
+  API_BASE === DEFAULT_API &&
+  !window.location.origin.startsWith("http://localhost")
+) {
+  API_BASE = PRODUCTION_API;
+}
 
 const instance = axios.create({
   baseURL: API_BASE,
