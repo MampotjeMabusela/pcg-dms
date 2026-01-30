@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 from ..auth import get_current_user
-from ..model import Document
+from ..model import Document, DocumentStatus
 from datetime import datetime
 import io
 import json
@@ -23,8 +23,8 @@ def _apply_filters(
         query = query.filter(Document.created_at <= datetime.fromisoformat(end))
     if vendor:
         query = query.filter(Document.vendor.ilike(f"%{vendor}%"))
-    if status:
-        query = query.filter(Document.status == status)
+    if status and status.strip().lower() in ("pending", "approved", "rejected"):
+        query = query.filter(Document.status == DocumentStatus(status.strip().lower()))
     if amount_min is not None:
         query = query.filter(Document.amount >= amount_min)
     if amount_max is not None:
@@ -135,11 +135,13 @@ def export_csv(
     end: str | None = None,
     vendor: str | None = None,
     status: str | None = None,
+    amount_min: float | None = None,
+    amount_max: float | None = None,
     db: Session = Depends(get_db),
     _current_user=Depends(get_current_user),
 ):
     """Export filtered report as CSV."""
-    query = _apply_filters(db.query(Document), start, end, vendor, status)
+    query = _apply_filters(db.query(Document), start, end, vendor, status, amount_min, amount_max)
     rows = query.all()
     data = [
         {
@@ -169,6 +171,8 @@ def export_excel(
     end: str | None = None,
     vendor: str | None = None,
     status: str | None = None,
+    amount_min: float | None = None,
+    amount_max: float | None = None,
     db: Session = Depends(get_db),
     _current_user=Depends(get_current_user),
 ):
@@ -179,7 +183,7 @@ def export_excel(
         raise HTTPException(
             500, "Excel export requires openpyxl: pip install openpyxl"
         ) from exc
-    query = _apply_filters(db.query(Document), start, end, vendor, status)
+    query = _apply_filters(db.query(Document), start, end, vendor, status, amount_min, amount_max)
     rows = query.all()
     data = [
         {
@@ -216,6 +220,8 @@ def export_pdf(
     end: str | None = None,
     vendor: str | None = None,
     status: str | None = None,
+    amount_min: float | None = None,
+    amount_max: float | None = None,
     db: Session = Depends(get_db),
     _current_user=Depends(get_current_user),
 ):
@@ -235,7 +241,7 @@ def export_pdf(
         raise HTTPException(
             500, "PDF export requires reportlab"
         ) from exc
-    query = _apply_filters(db.query(Document), start, end, vendor, status)
+    query = _apply_filters(db.query(Document), start, end, vendor, status, amount_min, amount_max)
     rows = query.all()
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)

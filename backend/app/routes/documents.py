@@ -33,7 +33,13 @@ async def upload_document(
 
 @router.get("/", response_model=list[schemas.DocumentOut])
 def list_documents(skip: int = 0, limit: int = 50, db: Session = Depends(get_db), _user=Depends(get_current_user)):
-    docs = db.query(Document).offset(skip).limit(limit).all()
+    docs = (
+        db.query(Document)
+        .order_by(Document.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return docs
 
 @router.get("/{doc_id}", response_model=schemas.DocumentOut)

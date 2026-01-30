@@ -14,6 +14,7 @@ export default function Reports() {
   });
   const [summary, setSummary] = React.useState(null);
   const [vatReport, setVatReport] = React.useState(null);
+  const [vendorAnalysis, setVendorAnalysis] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
 
   const fetchReports = () => {
@@ -25,13 +26,16 @@ export default function Reports() {
     if (filters.status) params.status = filters.status;
     if (filters.amount_min) params.amount_min = parseFloat(filters.amount_min);
     if (filters.amount_max) params.amount_max = parseFloat(filters.amount_max);
+    const reportParams = { start: params.start, end: params.end, vendor: params.vendor, status: params.status };
     Promise.all([
       api.get("/reports/spend-summary", { params }),
-      api.get("/reports/tax-vat-report", { params: { start: filters.start, end: filters.end, vendor: filters.vendor } }),
+      api.get("/reports/tax-vat-report", { params: reportParams }),
+      api.get("/reports/vendor-analysis", { params: reportParams }),
     ])
-      .then(([s, v]) => {
+      .then(([s, v, va]) => {
         setSummary(s.data);
         setVatReport(v.data);
+        setVendorAnalysis(va.data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -39,6 +43,7 @@ export default function Reports() {
 
   React.useEffect(() => {
     fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const exportFile = async (format) => {
@@ -47,6 +52,8 @@ export default function Reports() {
     if (filters.end) params.end = filters.end;
     if (filters.vendor) params.vendor = filters.vendor;
     if (filters.status) params.status = filters.status;
+    if (filters.amount_min) params.amount_min = parseFloat(filters.amount_min);
+    if (filters.amount_max) params.amount_max = parseFloat(filters.amount_max);
     try {
       const res = await api.get(`/reports/export/${format}`, { params, responseType: "blob" });
       const blob = new Blob([res.data]);
@@ -135,6 +142,16 @@ export default function Reports() {
             </div>
             <div className="text-sm text-gray-600">Items: {vatReport?.items?.length ?? 0} documents</div>
           </Card>
+          {vendorAnalysis && (vendorAnalysis.vendors?.length > 0) && (
+            <Card title="Vendor Analysis">
+              <p className="text-sm text-gray-600 mb-2">Spend by vendor (filtered).</p>
+              <ul className="space-y-1 text-sm">
+                {(vendorAnalysis.vendors || []).slice(0, 10).map(([v, amount]) => (
+                  <li key={v} className="flex justify-between"><span>{v}</span><span className="font-medium">${Number(amount).toFixed(2)}</span></li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </>
       )}
     </div>

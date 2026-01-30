@@ -113,7 +113,10 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [fetchDocuments]);
 
-  const statusLabel = (status) => (status === "approved" ? t.approved : status === "rejected" ? t.rejected : t.pending);
+  const statusLabel = (status) => {
+    const s = String(status || "").toLowerCase();
+    return s === "approved" ? t.approved : s === "rejected" ? t.rejected : t.pending;
+  };
 
   return (
     <div className="relative min-h-[60vh] space-y-6 pb-12">
@@ -125,8 +128,8 @@ export default function Dashboard() {
         <Card title={t.overview}>
           <div className="space-y-3">
             <div className="flex justify-between"><span className="text-slate-600">{t.documents}</span><strong className="text-slate-800">{docs.length}</strong></div>
-            <div className="flex justify-between"><span className="text-slate-600">{t.pending}</span><strong className="text-slate-800">{docs.filter(d => d.status === "pending").length}</strong></div>
-            <div className="flex justify-between"><span className="text-slate-600">{t.duplicates}</span><strong className="text-slate-800">{docs.filter(d => d.is_duplicate).length}</strong></div>
+            <div className="flex justify-between"><span className="text-slate-600">{t.pending}</span><strong className="text-slate-800">{docs.filter(d => String(d.status || "").toLowerCase() === "pending").length}</strong></div>
+            <div className="flex justify-between"><span className="text-slate-600">{t.duplicates}</span><strong className="text-slate-800">{docs.filter(d => Boolean(d.is_duplicate)).length}</strong></div>
           </div>
         </Card>
 
@@ -139,7 +142,7 @@ export default function Dashboard() {
               <li key={d.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="font-medium text-slate-800 truncate min-w-0">{d.filename}</div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${d.status === "approved" ? "bg-green-100 text-green-700" : d.status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{statusLabel(d.status)}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${String(d.status || "").toLowerCase() === "approved" ? "bg-green-100 text-green-700" : String(d.status || "").toLowerCase() === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{statusLabel(d.status)}</span>
                 </div>
                 <div className="grid grid-cols-1 gap-1.5 text-sm text-slate-600">
                   {d.vendor && <div><span className="text-slate-500">{t.vendor}:</span> <span className="font-medium text-slate-700">{d.vendor}</span></div>}
@@ -150,7 +153,7 @@ export default function Dashboard() {
                   {!d.vendor && !d.amount && !d.invoice_number && <div className="text-xs text-slate-400 italic">{t.processing}</div>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  {d.is_duplicate && <span className="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">{t.duplicate}</span>}
+                  {Boolean(d.is_duplicate) && <span className="text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">{t.duplicate}</span>}
                   <span className="text-xs text-slate-400">{t.step} {d.current_step}/3</span>
                   <span className="text-xs text-slate-400">{t.uploaded} {new Date(d.created_at).toLocaleDateString()}</span>
                   <Link to={`/documents/${d.id}`} className="text-xs text-teal-600 font-medium hover:underline ml-auto">{t.viewDetails} →</Link>
