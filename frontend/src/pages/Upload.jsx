@@ -35,9 +35,9 @@ export default function Upload() {
     try {
       const response = await api.post("/documents/upload", form, {
         headers,
-        timeout: 120000,
+        timeout: 60000,
       });
-      setMessage("Upload successful! Extracting vendor and amount...");
+      setMessage("Upload successful!");
       setFile(null);
       // Reset file input
       if (fileInputRef.current) {
@@ -71,8 +71,11 @@ export default function Upload() {
           errorMessage = err.response.data?.detail || `Upload failed: ${err.response.statusText}`;
         }
       } else if (err.request) {
-        // Request was made but no response received
-        errorMessage = "Cannot connect to server. Make sure the backend is running.";
+        if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+          errorMessage = "Request timed out. Try again or use a smaller file.";
+        } else {
+          errorMessage = "Cannot reach the server. On the live site, open https://dms-backend.fly.dev in a new tab first, wait for it to load, then try again.";
+        }
       } else {
         // Something else happened
         errorMessage = err.message || "Upload failed";

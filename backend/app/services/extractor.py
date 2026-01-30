@@ -12,33 +12,34 @@ import os
 
 def ocr_extract_text(file_path: str) -> str:
     try:
-        # Handle PDF files
+        # Handle PDF files: fast path first (PyPDF2 text), then OCR only if needed
         if file_path.lower().endswith('.pdf'):
+            text = ""
             try:
-                import pdf2image
+                import PyPDF2
+                with open(file_path, 'rb') as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        part = page.extract_text()
+                        if part:
+                            text += part + "\n"
+            except Exception:
+                pass
+            if text and len(text.strip()) >= 30:
+                return text
+            try:
                 from pdf2image import convert_from_path
                 images = convert_from_path(file_path)
                 text = ""
                 for img in images:
                     text += pytesseract.image_to_string(img) + "\n"
-                return text
-            except ImportError:
-                # Fallback: try PyPDF2 if available
-                try:
-                    import PyPDF2
-                    with open(file_path, 'rb') as file:
-                        reader = PyPDF2.PdfReader(file)
-                        text = ""
-                        for page in reader.pages:
-                            text += page.extract_text() + "\n"
-                        return text
-                except:
-                    return ""
-        
+                return text or ""
+            except Exception:
+                return text or ""
+
         # Handle image files
         img = Image.open(file_path).convert("L")
-        text = pytesseract.image_to_string(img)
-        return text
+        return pytesseract.image_to_string(img) or ""
     except Exception as e:
         print(f"OCR Error: {e}")
         return ""

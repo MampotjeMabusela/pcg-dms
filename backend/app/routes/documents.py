@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 import os
 from ..dependencies import get_db
@@ -11,8 +11,12 @@ from ..config import settings
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 @router.post("/upload", response_model=schemas.DocumentOut)
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db), _user=Depends(get_current_user)):
-    # Only invoices & credit notes per spec
+async def upload_document(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user),
+):
     if not file.filename.lower().endswith((".pdf", ".png", ".jpg", ".jpeg")):
         raise HTTPException(status_code=400, detail="Only invoices and credit notes (PDF or image) are allowed")
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -24,13 +28,7 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    # Run extraction synchronously so reports/overview have data (avoids background task not finishing on Fly.io)
-    try:
-        process_document_file(doc.id, saved_path)
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning("Extraction failed for doc %s: %s", doc.id, e)
-    doc = db.query(Document).get(doc.id)
+    background_tasks.add_task(process_document_file, doc.id, saved_path)
     return doc
 
 @router.get("/", response_model=list[schemas.DocumentOut])
