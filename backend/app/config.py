@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     REDIS_URL: str | None = None
     STORAGE_TYPE: str = "local"
     UPLOAD_DIR: str = "./uploads"
+    # Comma-separated origins for CORS (e.g. https://your-app.vercel.app)
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     model_config = SettingsConfigDict(env_file=".env")
 
