@@ -21,10 +21,12 @@ export default function Approvals() {
 
   const act = async (id, action) => {
     try {
-      await api.post(`/documents/${id}/approve`, null, { params: { action }});
-      setDocs(docs.filter(d => d.id !== id));
+      await api.post(`/documents/${id}/approve`, null, { params: { action } });
+      // Refetch so list updates (step change or doc removed when approved/rejected)
+      fetchDocs();
     } catch (err) {
-      alert(err.response?.data?.detail || "Action failed");
+      const msg = err.response?.data?.detail || "Action failed";
+      alert(Array.isArray(msg) ? msg.map((m) => m.msg || m).join(", ") : msg);
     }
   };
 

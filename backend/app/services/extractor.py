@@ -166,21 +166,36 @@ def process_document_file(doc_id: int, file_path: str):
             print(f"Warning: Extracted text is too short or empty for document {doc_id}")
         
         parsed = {}
-        # If OpenAI key present, you could call OpenAI to parse structured JSON
-        if settings.OPENAI_API_KEY:
+        # If OpenAI key present, use OpenAI to parse structured JSON (new client API)
+        if settings.OPENAI_API_KEY and (text or "").strip():
             try:
-                import openai
-                openai.api_key = settings.OPENAI_API_KEY
-                prompt = f"Extract vendor, invoice_number, date (YYYY-MM-DD), amount, vat from this invoice text. Return JSON.\n\n{text}"
-                resp = openai.ChatCompletion.create(model="gpt-4o-mini", messages=[{"role":"user","content":prompt}], temperature=0)
-                content = resp.choices[0].message.content
-                parsed = json.loads(content)
-                print(f"OpenAI extraction successful for document {doc_id}")
+                from openai import OpenAI
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                prompt = (
+                    "Extract from this invoice text and return only valid JSON with these keys: "
+                    "vendor (string), invoice_number (string), date (YYYY-MM-DD), amount (number), vat (number). "
+                    "If a value is missing use null. No markdown or explanation.\n\n" + (text or "")
+                )
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,
+                )
+                content = (resp.choices[0].message.content or "").strip()
+                # Strip markdown code blocks if present
+                if content.startswith("```"):
+                    content = re.sub(r"^```(?:json)?\s*", "", content)
+                    content = re.sub(r"\s*```$", "", content)
+                parsed = json.loads(content) if content else {}
+                if isinstance(parsed, dict):
+                    print(f"OpenAI extraction successful for document {doc_id}")
+                else:
+                    parsed = simple_parse(text)
             except Exception as e:
                 print(f"OpenAI extraction failed for document {doc_id}: {e}")
-                parsed = simple_parse(text)
+                parsed = simple_parse(text) if (text or "").strip() else {}
         else:
-            parsed = simple_parse(text)
+            parsed = simple_parse(text) if (text or "").strip() else {}
             print(f"Simple parse results for document {doc_id}: {parsed}")
         
         # Update document fields
@@ -193,15 +208,17 @@ def process_document_file(doc_id: int, file_path: str):
             print(f"  Invoice #: {doc.invoice_number}")
         
         try:
-            if parsed.get("amount"):
-                doc.amount = float(parsed.get("amount"))
+            amt = parsed.get("amount")
+            if amt is not None and amt != "":
+                doc.amount = float(amt)
                 print(f"  Amount: {doc.amount}")
         except Exception as e:
             print(f"  Error parsing amount: {e}")
         
         try:
-            if parsed.get("vat"):
-                doc.vat = float(parsed.get("vat"))
+            vat_val = parsed.get("vat")
+            if vat_val is not None and vat_val != "":
+                doc.vat = float(vat_val)
                 print(f"  VAT: {doc.vat}")
             elif doc.amount is not None and doc.amount > 0:
                 # Ensure VAT (15%) is set for reports when not extracted from document
