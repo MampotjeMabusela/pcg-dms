@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Environment and secrets
+.env
+backend/.env
+*.env.local
+
+# Build and IDE
+dist/
+frontend/dist/
+.cursor/
+.vscode/
+*.log
+
+# Database and uploads (optional: remove these lines if you want to track DB or sample uploads)
+backend/dms.db
+backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.egg-info/
+.eggs/
+.mypy_cache/
+.coverage
+htmlcov/
