@@ -28,9 +28,12 @@ export default function Upload() {
     
     const form = new FormData();
     form.append("file", file);
-    
+
+    // Ensure auth header is sent with FormData (some clients omit it for multipart)
+    const headers = { Authorization: `Bearer ${token}` };
+
     try {
-      const response = await api.post("/documents/upload", form);
+      const response = await api.post("/documents/upload", form, { headers });
       setMessage("Upload successful! Extracting vendor and amount...");
       setFile(null);
       // Reset file input
@@ -54,7 +57,9 @@ export default function Upload() {
       if (err.response) {
         // Server responded with error
         if (err.response.status === 401) {
-          errorMessage = "Authentication failed. Please log in again.";
+          errorMessage = "Session expired or invalid. Please log in again.";
+          localStorage.removeItem("token");
+          setTimeout(() => navigate("/login", { replace: true }), 1500);
         } else if (err.response.status === 400) {
           errorMessage = err.response.data?.detail || "Invalid file. Only PDF and image files are allowed.";
         } else if (err.response.status === 403) {
