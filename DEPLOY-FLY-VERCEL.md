@@ -255,6 +255,10 @@ If you see this after signing in, your token may be from a different backend (e.
    `fly logs`  
    If the app is stopped or crashing, fix any errors shown in the logs and redeploy with `fly deploy`.
 
+## Dashboard and Approvals show 0 documents after upload
+
+Every uploaded document is created as **pending** and appears in **Overview**, **Recent Documents**, and **Approvals** (with Approve/Reject). If you still see "No documents" or "No pending documents", the backend database may not be persisting: on Fly.io with default SQLite (no volume), the DB is reset on each deploy or restart. Add a **volume** (Step 3b) or use **Fly Postgres** so documents and approvals persist. Then upload again; the new document will show in the Dashboard and in Approvals for approval or rejection.
+
 4. **Optional: set VITE_API_BASE on Vercel**  
    In Vercel → **Settings** → **Environment Variables**, add **`VITE_API_BASE`** = **`https://dms-backend.fly.dev`** (no trailing slash), then **Redeploy** so the build uses it.
 

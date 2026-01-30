@@ -24,7 +24,11 @@ async def upload_document(
     contents = await file.read()
     with open(saved_path, "wb") as f:
         f.write(contents)
-    doc = Document(filename=os.path.basename(saved_path))
+    doc = Document(
+        filename=os.path.basename(saved_path),
+        status=DocumentStatus.pending,
+        current_step=1,
+    )
     db.add(doc)
     db.commit()
     db.refresh(doc)

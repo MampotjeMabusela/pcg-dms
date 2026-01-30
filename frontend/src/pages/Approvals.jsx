@@ -11,15 +11,20 @@ const STEP_LABELS = {
 export default function Approvals() {
   const [docs, setDocs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState(false);
 
   const fetchDocs = React.useCallback(() => {
+    setLoadError(false);
     api
       .get("/documents")
       .then(res => {
         const list = Array.isArray(res.data) ? res.data : [];
         setDocs(list.filter(d => String(d.status || "").toLowerCase() === "pending"));
       })
-      .catch(() => setDocs([]))
+      .catch(() => {
+        setDocs([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -48,10 +53,12 @@ export default function Approvals() {
       <p className="text-sm text-gray-600 mb-4">
         Each document must pass 3 steps: <strong>Step 1</strong> Reviewer/Viewer → <strong>Step 2</strong> Manager → <strong>Step 3</strong> Admin. Approve to advance; Reject to reject.
       </p>
-      {loading && docs.length === 0 ? (
+      {loading && docs.length === 0 && !loadError ? (
         <p className="text-sm text-gray-500">Loading...</p>
+      ) : loadError ? (
+        <p className="text-sm text-amber-600">Could not load pending list. Check your connection and try again.</p>
       ) : docs.length === 0 ? (
-        <p className="text-sm text-gray-500 italic">No pending documents. Upload documents to see them here.</p>
+        <p className="text-sm text-gray-500 italic">No pending documents. Every uploaded document is flagged for approval—upload one and it will appear here with Approve/Reject options.</p>
       ) : (
         <ul className="space-y-3">
           {docs.map(d => (

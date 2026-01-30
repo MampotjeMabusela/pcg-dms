@@ -95,6 +95,7 @@ const LANGUAGE_OPTIONS = [
 
 export default function Dashboard() {
   const [docs, setDocs] = React.useState([]);
+  const [loadError, setLoadError] = React.useState(false);
   const [lang, setLang] = React.useState(() => localStorage.getItem("dms_lang") || "en");
 
   const t = translations[lang] || translations.en;
@@ -104,7 +105,16 @@ export default function Dashboard() {
   }, [lang]);
 
   const fetchDocuments = React.useCallback(() => {
-    api.get("/documents").then(res => setDocs(Array.isArray(res.data) ? res.data : [])).catch(() => setDocs([]));
+    setLoadError(false);
+    api
+      .get("/documents")
+      .then(res => {
+        setDocs(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        setDocs([]);
+        setLoadError(true);
+      });
   }, []);
 
   React.useEffect(() => {
@@ -126,16 +136,22 @@ export default function Dashboard() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title={t.overview}>
+          {loadError ? (
+            <p className="text-sm text-amber-600">Could not load documents. Check your connection and try again.</p>
+          ) : (
           <div className="space-y-3">
             <div className="flex justify-between"><span className="text-slate-600">{t.documents}</span><strong className="text-slate-800">{docs.length}</strong></div>
             <div className="flex justify-between"><span className="text-slate-600">{t.pending}</span><strong className="text-slate-800">{docs.filter(d => String(d.status || "").toLowerCase() === "pending").length}</strong></div>
             <div className="flex justify-between"><span className="text-slate-600">{t.duplicates}</span><strong className="text-slate-800">{docs.filter(d => Boolean(d.is_duplicate)).length}</strong></div>
           </div>
+          )}
         </Card>
 
         <Card title={t.recentDocuments}>
-          {docs.length === 0 ? (
-            <p className="text-sm text-slate-500 italic">No documents yet. Upload one to get started.</p>
+          {loadError ? (
+            <p className="text-sm text-amber-600">Could not load documents. Check your connection.</p>
+          ) : docs.length === 0 ? (
+            <p className="text-sm text-slate-500 italic">No documents yet. Upload one to get started—it will appear here and in Approvals for approval or rejection.</p>
           ) : (
           <ul className="space-y-4">
             {docs.slice(0, 5).map(d => (
