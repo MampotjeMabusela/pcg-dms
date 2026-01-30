@@ -103,15 +103,15 @@ export default function Dashboard() {
     localStorage.setItem("dms_lang", lang);
   }, [lang]);
 
-  const fetchDocuments = () => {
-    api.get("/documents").then(res => setDocs(res.data)).catch(() => {});
-  };
+  const fetchDocuments = React.useCallback(() => {
+    api.get("/documents").then(res => setDocs(Array.isArray(res.data) ? res.data : [])).catch(() => setDocs([]));
+  }, []);
 
   React.useEffect(() => {
     fetchDocuments();
-    const interval = setInterval(fetchDocuments, 5000);
+    const interval = setInterval(fetchDocuments, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchDocuments]);
 
   const statusLabel = (status) => (status === "approved" ? t.approved : status === "rejected" ? t.rejected : t.pending);
 
@@ -131,6 +131,9 @@ export default function Dashboard() {
         </Card>
 
         <Card title={t.recentDocuments}>
+          {docs.length === 0 ? (
+            <p className="text-sm text-slate-500 italic">No documents yet. Upload one to get started.</p>
+          ) : (
           <ul className="space-y-4">
             {docs.slice(0, 5).map(d => (
               <li key={d.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
@@ -155,6 +158,7 @@ export default function Dashboard() {
               </li>
             ))}
           </ul>
+          )}
         </Card>
 
         <Card title={t.quickActions}>
