@@ -79,9 +79,9 @@ Fly uses **secrets** for sensitive env vars. Set them before the first deploy.
 
 3. **After** you deploy the frontend on Vercel (Part 2), set CORS to your Vercel URL:
    ```bash
-   fly secrets set CORS_ORIGINS="https://your-app.vercel.app,http://localhost:5173"
+   fly secrets set CORS_ORIGINS="https://pcg-dms.vercel.app,http://localhost:5173"
    ```
-   Replace `your-app.vercel.app` with your actual Vercel URL.
+   (Use your actual Vercel URL if different from `pcg-dms.vercel.app`.)
 
 **Optional:** For OpenAI-powered features:
 ```bash
@@ -186,7 +186,7 @@ Or run `create_admin.py` locally with `DATABASE_URL` pointing at production (onl
 
 1. Click **Deploy**.
 2. Wait until the build finishes and status is **Ready**.
-3. Click **Visit** to open the site. The URL will be like **https://dms-project.vercel.app** — this is your **frontend URL**.
+3. Click **Visit** to open the site. The URL will be like **https://pcg-dms.vercel.app** — this is your **frontend URL**.
 
 ---
 
@@ -194,7 +194,7 @@ Or run `create_admin.py` locally with `DATABASE_URL` pointing at production (onl
 
 1. In a terminal, from the **backend** folder:
    ```bash
-   fly secrets set CORS_ORIGINS="https://dms-project.vercel.app,http://localhost:5173"
+   fly secrets set CORS_ORIGINS="https://pcg-dms.vercel.app,http://localhost:5173"
    ```
    Use your actual Vercel URL. Fly will redeploy the app.
 2. After redeploy, the browser should allow requests from your Vercel site to the Fly.io API.
@@ -206,7 +206,7 @@ Or run `create_admin.py` locally with `DATABASE_URL` pointing at production (onl
 | What        | Where   | URL example                    |
 |------------|--------|---------------------------------|
 | Backend    | Fly.io | `https://dms-backend.fly.dev`   |
-| Frontend   | Vercel | `https://dms-project.vercel.app`|
+| Frontend   | Vercel | `https://pcg-dms.vercel.app`|
 
 **Backend (Fly.io):**  
 - Commands run from `backend/`.  
