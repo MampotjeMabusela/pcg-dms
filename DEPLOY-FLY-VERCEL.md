@@ -246,7 +246,11 @@ fly status          # App status
 
 3. **Check Fly app status**  
    From your machine, in the **backend** folder run:  
-   `fly status`  
+   `fly status`
+
+## "Authentication failed" or "Session expired" when uploading
+
+If you see this after signing in, your token may be from a different backend (e.g. you logged in on localhost but are now on Vercel). **Log in again on the same site you’re using** (e.g. https://pcg-dms.vercel.app) so the token is issued by the Fly.io backend. Ensure `SECRET_KEY` is set on Fly.io (`fly secrets set SECRET_KEY=...`).  
    and:  
    `fly logs`  
    If the app is stopped or crashing, fix any errors shown in the logs and redeploy with `fly deploy`.

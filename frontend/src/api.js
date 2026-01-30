@@ -22,4 +22,14 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
+instance.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("token");
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default instance;

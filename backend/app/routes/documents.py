@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 import os
-from ..dependencies import get_db, require_role
+from ..dependencies import get_db
 from ..auth import get_current_user
 from .. import schemas
 from ..model import Document, DocumentStatus, Approval
@@ -11,7 +11,7 @@ from ..config import settings
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 @router.post("/upload", response_model=schemas.DocumentOut)
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db), _user=Depends(get_current_user)):
     # Only invoices & credit notes per spec
     if not file.filename.lower().endswith((".pdf", ".png", ".jpg", ".jpeg")):
         raise HTTPException(status_code=400, detail="Only invoices and credit notes (PDF or image) are allowed")
@@ -25,17 +25,21 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     db.commit()
     db.refresh(doc)
     # Run extraction synchronously so reports/overview have data (avoids background task not finishing on Fly.io)
-    process_document_file(doc.id, saved_path)
+    try:
+        process_document_file(doc.id, saved_path)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Extraction failed for doc %s: %s", doc.id, e)
     doc = db.query(Document).get(doc.id)
     return doc
 
 @router.get("/", response_model=list[schemas.DocumentOut])
-def list_documents(skip: int = 0, limit: int = 50, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def list_documents(skip: int = 0, limit: int = 50, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     docs = db.query(Document).offset(skip).limit(limit).all()
     return docs
 
 @router.get("/{doc_id}", response_model=schemas.DocumentOut)
-def get_document(doc_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def get_document(doc_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     doc = db.query(Document).get(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")

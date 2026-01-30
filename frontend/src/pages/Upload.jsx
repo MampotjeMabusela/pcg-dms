@@ -33,7 +33,10 @@ export default function Upload() {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      const response = await api.post("/documents/upload", form, { headers });
+      const response = await api.post("/documents/upload", form, {
+        headers,
+        timeout: 120000,
+      });
       setMessage("Upload successful! Extracting vendor and amount...");
       setFile(null);
       // Reset file input
