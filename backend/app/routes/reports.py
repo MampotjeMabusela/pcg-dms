@@ -9,17 +9,6 @@ import io
 import json
 import math
 import pandas as pd
-import time
-
-# #region agent log
-_DEBUG_LOG = r"c:\Users\mampo\OneDrive\Documents\dms-project\.cursor\debug.log"
-def _dlog(loc, msg, data, hid="H3"):
-    try:
-        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
-            f.write(json.dumps({"location": loc, "message": msg, "data": data, "timestamp": int(time.time() * 1000), "sessionId": "debug-session", "hypothesisId": hid}) + "\n")
-    except Exception:
-        pass
-# #endregion
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -328,9 +317,6 @@ def ai_insights(
             end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
         query = query.filter(Document.created_at <= end_dt)
     rows = query.all()
-    # #region agent log
-    _dlog("reports.py:ai_insights", "insights entry", {"start": start, "end": end, "granularity": granularity, "rows_count": len(rows)}, "H3")
-    # #endregion
 
     # Document counts for dashboard: uploaded, pending, duplicates, approved
     documents_uploaded = len(rows)
@@ -408,9 +394,6 @@ def ai_insights(
         s = r.status.value
         by_status_spend[s] = by_status_spend.get(s, 0) + (r.amount or 0)
 
-    # #region agent log
-    _dlog("reports.py:ai_insights", "insights ok", {"trends_count": len(trends), "documents_uploaded": documents_uploaded}, "H3")
-    # #endregion
     return {
         "documents_uploaded": documents_uploaded,
         "pending": pending,

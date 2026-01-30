@@ -31,64 +31,22 @@ export default function Login() {
       return;
     }
     try {
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/d8b408c8-f07f-4c53-b6e5-412d747aad21", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: "Login.jsx:submit",
-          message: "login attempt",
-          data: { emailPresent: !!email, passwordLength: (password || "").length },
-          timestamp: Date.now(),
-          sessionId: "debug-session",
-          hypothesisId: "H2,H5",
-        }),
-      }).catch(() => {});
-      // #endregion
       const form = new URLSearchParams();
       form.append("username", email);
       form.append("password", password);
       const res = await api.post("/auth/token", form, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/d8b408c8-f07f-4c53-b6e5-412d747aad21", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: "Login.jsx:submit",
-          message: "login success",
-          data: { status: res.status },
-          timestamp: Date.now(),
-          sessionId: "debug-session",
-          hypothesisId: "H2,H5",
-        }),
-      }).catch(() => {});
-      // #endregion
       localStorage.setItem("token", res.data.access_token);
       navigate("/");
     } catch (err) {
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/d8b408c8-f07f-4c53-b6e5-412d747aad21", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: "Login.jsx:submit",
-          message: "login failed",
-          data: { status: err.response?.status, hasRequest: !!err.request, detail: err.response?.data?.detail },
-          timestamp: Date.now(),
-          sessionId: "debug-session",
-          hypothesisId: "H1,H2,H5",
-        }),
-      }).catch(() => {});
-      // #endregion
       let errorMessage = "Login failed";
       if (err.response) {
         if (err.response.status === 401) errorMessage = "Incorrect email or password";
         else if (err.response.status === 422) errorMessage = "Invalid email or password format";
         else errorMessage = err.response.data?.detail || `Login failed: ${err.response.statusText}`;
       } else if (err.request) {
-        errorMessage = "Cannot connect to server. Make sure the backend is running on http://localhost:8000";
+        errorMessage = "Cannot connect to server. Check that the API is reachable (local: http://localhost:8000, production: backend URL).";
       } else errorMessage = err.message || "Login failed";
       setError(errorMessage);
     } finally {
